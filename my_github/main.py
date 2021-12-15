@@ -14,7 +14,7 @@ def get_user_info(args: Any) -> Dict[str, Any]:
         'name': user.name,
         'biography': user.bio,
         'company': user.company,
-        'starred repos': len([i for i in user.get_starred()]),
+        'starred repos': len(list(user.get_starred())),
     }
     return info
 
@@ -28,7 +28,7 @@ def get_repo_info(args: Any) -> Dict[str, Any]:
         'forks count': repo.forks_count,
         'stargazers count': repo.stargazers_count,
         'main language': repo.language,
-        'languages': [i for i in repo.get_languages()],
+        'languages': list(repo.get_languages()),
         'parent': repo.parent.full_name if repo.parent is not None else None
     }
     return info
@@ -121,19 +121,19 @@ def print_info(info: Dict[str, Any]) -> None:
 def print_list(list: List[str]) -> None:
     for num, item in enumerate(list):
         if num != len(list) - 1:
-            sys.stdout.write(f'{item}, ')
+            print(f'{item}, ')
         else:
-            sys.stdout.write(f'{item}\n')
+            print(f'{item}\n')
 
 
 def print_two_lists(two_lists: (List[str], List[str])) -> None:
     users, repos = two_lists
-    sys.stdout.write('Users:\n')
+    print('Users:\n')
     for user in users:
-        sys.stdout.write(f'{user}\n')
-    sys.stdout.write('Repos:\n')
+        print(f'{user}\n')
+    print('Repos:\n')
     for repo in repos:
-        sys.stdout.write(f'{repo}\n')
+        print(f'{repo}\n')
 
 
 def parser_init() -> argparse.ArgumentParser:
@@ -143,6 +143,7 @@ def parser_init() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(
         dest='action',
         metavar='<command>',
+        required=True
     )
 
     _get_user_info = subparsers.add_parser(

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "my-github"
+name = "my_github"
 version = "0.1.0"
 description = ""
 authors = ["ispraf <ispraf@gmail.com>"]
@@ -15,4 +15,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-my-github = "script.main:my_github"
+my-github = "my_github.main:my_github"
