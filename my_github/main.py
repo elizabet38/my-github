@@ -131,25 +131,13 @@ def dfs_run(name: str, names: List[str], count: int) \
     return names
 
 
-def find_repos(args: Any) -> List[Dict[str, Any]]:
-
-    for i in range(args.num):
-        repo = g.search_repositories(args.text)[i]
+def find_repos(args: Any) -> None:
+    repos = g.search_repositories(args.text)[:args.num]
+    for i, repo in enumerate(repos):
         info = get_repo_info_(repo.full_name)
         print(f'{i + 1}.')
         print_info(info)
         print('\n')
-    return [get_repo_info_(i.full_name) for i in g.search_repositories(args.text)[:args.num]]
-
-
-
-'''repos_list = g.search_repositories(args.text)[:args.num]
-names = [get_repo_info_(i.full_name) for i in repos_list]
-for i, name in enumerate(names):
-    print(f'{i + 1}.')
-    print_info(name)
-    print('\n')
-return names'''
 
 
 def print_info(info: Dict[str, Any]) -> None:
@@ -172,7 +160,7 @@ def print_two_lists(two_lists: (List[str], List[str])) -> None:
         print(repo)
 
 
-def print_list_with_info(list: List[Dict[str, Any]]) -> None:
+def no_print(*args, **kwargs) -> None:
     pass
 
 
@@ -269,7 +257,7 @@ def parser_init() -> argparse.ArgumentParser:
         type=int,
         help='Number of repositories to show'
     )
-    _find_repos.set_defaults(func=find_repos, out=print_list_with_info)
+    _find_repos.set_defaults(func=find_repos, out=no_print)
 
     return parser
 
