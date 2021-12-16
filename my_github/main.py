@@ -1,10 +1,21 @@
 import argparse
 from github import Github
 from typing import Dict, List, Any
-import sys
 
-ACCESS_TOKEN = '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'
+ACCESS_TOKEN = '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'
 g = Github(ACCESS_TOKEN)
+
+
+class UserOrRepo():
+    def __init__(self, name):
+        self.is_repo = '/' in name
+        self.name = name
+
+    def get_list(self):
+        if self.is_repo:
+            return get_contr_list_(self.name)
+        else:
+            return get_repo_list_(self.name)
 
 
 def get_user_info(args: Any) -> Dict[str, Any]:
@@ -53,64 +64,44 @@ def get_contr_list_(repo_name: str) -> List[str]:
 
 
 def bfs(args: Any) -> (List[str], List[str]):
-    name = args.name
+    waiting_list = [UserOrRepo(args.name)]
     depth = args.depth
     users_list = []
     repos_list = []
-    waiting_list = [name]
-    is_repo = '/' in name
-    while len(waiting_list) > 0 and depth >= 0:
-        if is_repo:
-            another_names_list = repos_list
-            names_list = users_list
-            get_list = get_contr_list_
-        else:
-            another_names_list = users_list
-            names_list = repos_list
-            get_list = get_repo_list_
-        names = []
+    while depth > 0 and waiting_list:
+        new_list = []
         for name in waiting_list:
-            another_names_list.append(name)
-            new_names = [i for i in get_list(name)
-                         if i not in names_list and i not in names]
-            names.extend(new_names)
-        waiting_list = names
+            new_names = [i for i in name.get_list() if
+                         i not in users_list and
+                         i not in repos_list and
+                         i not in new_list]
+            new_list.extend(new_names)
+        if waiting_list[0].is_repo:
+            repos_list.extend([i.name for i in waiting_list])
+        else:
+            users_list.extend([i.name for i in waiting_list])
+        waiting_list = [UserOrRepo(i) for i in new_list]
 
         depth -= 1
-        is_repo = not is_repo
     return users_list, repos_list
 
 
 def dfs(args: Any) -> (List[str], List[str]):
-    return dfs_run(args.name, [], [], args.count)
+    names = dfs_run(args.name, [], args.count)
+    return [i for i in names if not UserOrRepo(i).is_repo],\
+           [i for i in names if UserOrRepo(i).is_repo]
 
 
-def dfs_run(name: str, users: List[str], repos: List[str], count: int)\
-        -> (List[str], List[str]):
-    is_repo = '/' in name
-    if is_repo:
-        get_list = get_contr_list_
-        check_list = users
-        add_list = repos
-    else:
-        get_list = get_repo_list_
-        check_list = repos
-        add_list = users
-    add_list.append(name)
-    possible_names = [i for i in get_list(name) if i not in check_list]
-
-    while len(users) + len(repos) < int(count) and possible_names:
-        users, repos = dfs_run(possible_names[0], users, repos, count)
-        if is_repo:
-            get_list = get_contr_list_
-            check_list = users
-            add_list = repos
-        else:
-            get_list = get_repo_list_
-            check_list = repos
-            add_list = users
-        possible_names = [i for i in get_list(name) if i not in check_list]
-    return users, repos
+def dfs_run(name: str, names: List[str], count: int)\
+        -> (List[str]):
+    names.append(name)
+    possible_names = [i for i in UserOrRepo(name).get_list()
+                      if i not in names]
+    while possible_names and len(names) < count:
+        names = dfs_run(possible_names[0], names, count)
+        possible_names = [i for i in UserOrRepo(name).get_list()
+                          if i not in names]
+    return names
 
 
 def print_info(info: Dict[str, Any]) -> None:
@@ -194,6 +185,7 @@ def parser_init() -> argparse.ArgumentParser:
         '--depth',
         default=3,
         required=False,
+        type=int,
         help='Depth of bfs'
     )
     _bfs.set_defaults(func=bfs, out=print_two_lists)
@@ -209,6 +201,7 @@ def parser_init() -> argparse.ArgumentParser:
         '--count',
         default=100,
         required=False,
+        type=int,
         help='Number of steps of dfs'
     )
     _dfs.set_defaults(func=dfs, out=print_two_lists)
@@ -217,6 +210,7 @@ def parser_init() -> argparse.ArgumentParser:
 
 
 def my_github():
+    g.get_user('elizabet38')
     parser = parser_init()
     args = parser.parse_args()
     output = args.func(args)
