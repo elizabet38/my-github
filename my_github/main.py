@@ -2,20 +2,45 @@ import argparse
 from typing import Dict, List, Any
 from github import Github
 
-ACCESS_TOKEN = ''
+with open('TOKEN.txt') as f:
+    ACCESS_TOKEN = f.read()
 g = Github(ACCESS_TOKEN)
 
 
-class UserOrRepo():
+class BaseClass:
     def __init__(self, name):
-        self.is_repo = '/' in name
         self.name = name
 
-    def get_list(self):
-        if self.is_repo:
-            return get_contr_list_(self.name)
-        else:
-            return get_repo_list_(self.name)
+    def neighbours(self):
+        raise NotImplementedError
+
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+
+class User(BaseClass):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def neighbours(self):
+        return get_repo_list_(self.name)
+
+
+class Repo(BaseClass):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def neighbours(self):
+        return get_contr_list_(self.name)
+
+
+def get_user_or_repo(name):
+    if '/' in name:
+        return Repo(name)
+    return User(name)
 
 
 def get_user_info(args: Any) -> Dict[str, Any]:
@@ -24,6 +49,7 @@ def get_user_info(args: Any) -> Dict[str, Any]:
     info = {
         'name': user.name,
         'biography': user.bio,
+        'url': user.url,
         'company': user.company,
         'starred repos': len(list(user.get_starred())),
     }
@@ -64,42 +90,47 @@ def get_contr_list_(repo_name: str) -> List[str]:
 
 
 def bfs(args: Any) -> (List[str], List[str]):
-    waiting_list = [UserOrRepo(args.name)]
+    waiting_list = [get_user_or_repo(args.name)]
     depth = args.depth
     users_list = []
     repos_list = []
-    while depth > 0 and waiting_list:
+    while depth > 1 and waiting_list:
         new_list = []
         for name in waiting_list:
-            new_names = [i for i in name.get_list() if
+            new_names = [i for i in name.neighbours() if
                          i not in users_list and
                          i not in repos_list and
                          i not in new_list]
             new_list.extend(new_names)
-        if waiting_list[0].is_repo:
+        if isinstance(waiting_list[0], Repo):
             repos_list.extend([i.name for i in waiting_list])
         else:
             users_list.extend([i.name for i in waiting_list])
-        waiting_list = [UserOrRepo(i) for i in new_list]
+        waiting_list = [get_user_or_repo(i) for i in new_list]
 
         depth -= 1
+    if isinstance(waiting_list[0], Repo):
+        repos_list.extend([i.name for i in waiting_list])
+    else:
+        users_list.extend([i.name for i in waiting_list])
+
     return users_list, repos_list
 
 
 def dfs(args: Any) -> (List[str], List[str]):
     names = dfs_run(args.name, [], args.count)
-    return [i for i in names if not UserOrRepo(i).is_repo],\
-           [i for i in names if UserOrRepo(i).is_repo]
+    return [i for i in names if isinstance(get_user_or_repo(i), User)],\
+           [i for i in names if isinstance(get_user_or_repo(i), Repo)]
 
 
 def dfs_run(name: str, names: List[str], count: int)\
         -> (List[str]):
     names.append(name)
-    possible_names = [i for i in UserOrRepo(name).get_list()
+    possible_names = [i for i in get_user_or_repo(name).neighbours()
                       if i not in names]
     while possible_names and len(names) < count:
         names = dfs_run(possible_names[0], names, count)
-        possible_names = [i for i in UserOrRepo(name).get_list()
+        possible_names = [i for i in get_user_or_repo(name).neighbours()
                           if i not in names]
     return names
 
@@ -111,25 +142,22 @@ def find_repos(args:Any) -> List[str]:
 
 def print_info(info: Dict[str, Any]) -> None:
     for key, value in info.items():
-        print(f'{key}: {value}\n')
+        print(f'{key}: {value}')
 
 
 def print_list(list: List[str]) -> None:
     for num, item in enumerate(list):
-        if num != len(list) - 1:
-            print(f'{item}, ')
-        else:
-            print(f'{item}\n')
+        print(f'{item}')
 
 
 def print_two_lists(two_lists: (List[str], List[str])) -> None:
     users, repos = two_lists
-    print('Users:\n')
+    print('Users:')
     for user in users:
-        print(f'{user}\n')
-    print('Repos:\n')
+        print(f'{user}')
+    print('Repos:')
     for repo in repos:
-        print(f'{repo}\n')
+        print(f'{repo}')
 
 
 def parser_init() -> argparse.ArgumentParser:
