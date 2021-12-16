@@ -1,8 +1,8 @@
 import argparse
-from github import Github
 from typing import Dict, List, Any
+from github import Github
 
-ACCESS_TOKEN = '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'
+ACCESS_TOKEN = ''
 g = Github(ACCESS_TOKEN)
 
 
@@ -102,6 +102,11 @@ def dfs_run(name: str, names: List[str], count: int)\
         possible_names = [i for i in UserOrRepo(name).get_list()
                           if i not in names]
     return names
+
+
+def find_repos(args:Any) -> List[str]:
+    repos_list = g.search_repositories(args.text)[:args.num]
+    return [i.full_name for i in repos_list]
 
 
 def print_info(info: Dict[str, Any]) -> None:
@@ -205,6 +210,22 @@ def parser_init() -> argparse.ArgumentParser:
         help='Number of steps of dfs'
     )
     _dfs.set_defaults(func=dfs, out=print_two_lists)
+    _find_repos = subparsers.add_parser(
+        'find_repos',
+        help='Find repositories with text in name'
+    )
+    _find_repos.add_argument(
+        'text',
+        help='Text to find'
+    )
+    _find_repos.add_argument(
+        '--num',
+        default=10,
+        required=False,
+        type=int,
+        help='Number of repositories to show'
+    )
+    _find_repos.set_defaults(func=find_repos, out=print_list)
 
     return parser
 
