@@ -210,7 +210,6 @@ def parser_init() -> argparse.ArgumentParser:
 
 
 def my_github():
-    g.get_user('elizabet38')
     parser = parser_init()
     args = parser.parse_args()
     output = args.func(args)
