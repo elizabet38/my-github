@@ -134,7 +134,16 @@ def dfs_run(name: str, names: List[str], count: int) \
 def find_repos(args: Any) -> None:
     repos = g.search_repositories(args.text)[:args.num]
     for i, repo in enumerate(repos):
-        info = get_repo_info_(repo.full_name)
+        info = {
+            'name': repo.full_name,
+            'description': repo.description,
+            'forks count': repo.forks_count,
+            'stargazers count': repo.stargazers_count,
+            'main language': repo.language,
+            'languages': list(repo.get_languages()),
+        }
+        if repo.parent is not None:
+            info['forked from'] = repo.parent.full_name
         print(f'{i + 1}.')
         print_info(info)
         print('\n')
