@@ -17,17 +17,11 @@ class BaseClass:
 
 
 class User(BaseClass):
-    def __init__(self, name):
-        super().__init__(name)
-
     def neighbours(self):
         return get_repo_list_(self.name)
 
 
 class Repo(BaseClass):
-    def __init__(self, name):
-        super().__init__(name)
-
     def neighbours(self):
         return get_contr_list_(self.name)
 
@@ -67,8 +61,9 @@ def get_repo_info_(name: str) -> Dict[str, Any]:
         'stargazers count': repo.stargazers_count,
         'main language': repo.language,
         'languages': list(repo.get_languages()),
-        'parent': repo.parent.full_name if repo.parent is not None else None
     }
+    if repo.parent is not None:
+        info['forked from'] = repo.parent.full_name
     return info
 
 
@@ -137,8 +132,24 @@ def dfs_run(name: str, names: List[str], count: int) \
 
 
 def find_repos(args: Any) -> List[Dict[str, Any]]:
-    repos_list = g.search_repositories(args.text)[:args.num]
-    return [get_repo_info_(i.full_name) for i in repos_list]
+
+    for i in range(args.num):
+        repo = g.search_repositories(args.text)[i]
+        info = get_repo_info_(repo.full_name)
+        print(f'{i + 1}.')
+        print_info(info)
+        print('\n')
+    return [get_repo_info_(i.full_name) for i in g.search_repositories(args.text)[:args.num]]
+
+
+
+'''repos_list = g.search_repositories(args.text)[:args.num]
+names = [get_repo_info_(i.full_name) for i in repos_list]
+for i, name in enumerate(names):
+    print(f'{i + 1}.')
+    print_info(name)
+    print('\n')
+return names'''
 
 
 def print_info(info: Dict[str, Any]) -> None:
@@ -155,17 +166,14 @@ def print_two_lists(two_lists: (List[str], List[str])) -> None:
     users, repos = two_lists
     print('Users:')
     for user in users:
-        print(f'{user}')
+        print(user)
     print('Repos:')
     for repo in repos:
-        print(f'{repo}')
+        print(repo)
 
 
-def print_list_with_info(list: List[Dict[str, Any]]):
-    for n, i in enumerate(list):
-        print(f'{n}.')
-        print_info(i)
-        print('\n')
+def print_list_with_info(list: List[Dict[str, Any]]) -> None:
+    pass
 
 
 def parser_init() -> argparse.ArgumentParser:
