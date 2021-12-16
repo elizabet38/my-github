@@ -2,6 +2,7 @@ import argparse
 from typing import Dict, List, Any
 from github import Github
 from dataclasses import dataclass
+from github.Repository import Repository
 
 with open('TOKEN.txt') as f:
     ACCESS_TOKEN = f.read().splitlines()[0]
@@ -48,12 +49,17 @@ def get_user_info_(login: str) -> Dict[str, Any]:
     return info
 
 
+
 def get_repo_info(args: Any) -> Dict[str, Any]:
     return get_repo_info_(args.name)
 
 
 def get_repo_info_(name: str) -> Dict[str, Any]:
     repo = g.get_repo(name)
+    return get_repo_info__(repo)
+
+
+def get_repo_info__(repo: Repository) -> Dict[str, Any]:
     info = {
         'name': repo.full_name,
         'description': repo.description,
@@ -134,16 +140,7 @@ def dfs_run(name: str, names: List[str], count: int) \
 def find_repos(args: Any) -> None:
     repos = g.search_repositories(args.text)[:args.num]
     for i, repo in enumerate(repos):
-        info = {
-            'name': repo.full_name,
-            'description': repo.description,
-            'forks count': repo.forks_count,
-            'stargazers count': repo.stargazers_count,
-            'main language': repo.language,
-            'languages': list(repo.get_languages()),
-        }
-        if repo.parent is not None:
-            info['forked from'] = repo.parent.full_name
+        info = get_repo_info__(repo)
         print(f'{i + 1}.')
         print_info(info)
         print('\n')
