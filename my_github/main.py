@@ -1,24 +1,19 @@
 import argparse
 from typing import Dict, List, Any
 from github import Github
+from dataclasses import dataclass
 
 with open('TOKEN.txt') as f:
-    ACCESS_TOKEN = f.read()
+    ACCESS_TOKEN = f.read().splitlines()[0]
 g = Github(ACCESS_TOKEN)
 
 
+@dataclass
 class BaseClass:
-    def __init__(self, name):
-        self.name = name
+    name: str
 
     def neighbours(self):
-        raise NotImplementedError
-
-    def __str__(self):
-        return self.name
-
-    def __eq__(self, other):
-        return self.name == other.name
+        raise NotImplementedError('Not implemented')
 
 
 class User(BaseClass):
@@ -44,7 +39,10 @@ def get_user_or_repo(name):
 
 
 def get_user_info(args: Any) -> Dict[str, Any]:
-    login = args.login
+    return get_user_info_(args.login)
+
+
+def get_user_info_(login: str) -> Dict[str, Any]:
     user = g.get_user(login)
     info = {
         'name': user.name,
@@ -57,7 +55,10 @@ def get_user_info(args: Any) -> Dict[str, Any]:
 
 
 def get_repo_info(args: Any) -> Dict[str, Any]:
-    name = args.name
+    return get_repo_info_(args.name)
+
+
+def get_repo_info_(name: str) -> Dict[str, Any]:
     repo = g.get_repo(name)
     info = {
         'name': repo.full_name,
@@ -119,11 +120,11 @@ def bfs(args: Any) -> (List[str], List[str]):
 
 def dfs(args: Any) -> (List[str], List[str]):
     names = dfs_run(args.name, [], args.count)
-    return [i for i in names if isinstance(get_user_or_repo(i), User)],\
+    return [i for i in names if isinstance(get_user_or_repo(i), User)], \
            [i for i in names if isinstance(get_user_or_repo(i), Repo)]
 
 
-def dfs_run(name: str, names: List[str], count: int)\
+def dfs_run(name: str, names: List[str], count: int) \
         -> (List[str]):
     names.append(name)
     possible_names = [i for i in get_user_or_repo(name).neighbours()
@@ -135,9 +136,9 @@ def dfs_run(name: str, names: List[str], count: int)\
     return names
 
 
-def find_repos(args:Any) -> List[str]:
+def find_repos(args: Any) -> List[Dict[str, Any]]:
     repos_list = g.search_repositories(args.text)[:args.num]
-    return [i.full_name for i in repos_list]
+    return [get_repo_info_(i.full_name) for i in repos_list]
 
 
 def print_info(info: Dict[str, Any]) -> None:
@@ -158,6 +159,13 @@ def print_two_lists(two_lists: (List[str], List[str])) -> None:
     print('Repos:')
     for repo in repos:
         print(f'{repo}')
+
+
+def print_list_with_info(list: List[Dict[str, Any]]):
+    for n, i in enumerate(list):
+        print(f'{n}.')
+        print_info(i)
+        print('\n')
 
 
 def parser_init() -> argparse.ArgumentParser:
@@ -253,7 +261,7 @@ def parser_init() -> argparse.ArgumentParser:
         type=int,
         help='Number of repositories to show'
     )
-    _find_repos.set_defaults(func=find_repos, out=print_list)
+    _find_repos.set_defaults(func=find_repos, out=print_list_with_info)
 
     return parser
 
